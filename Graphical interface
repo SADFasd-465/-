@@ -1,0 +1,81 @@
+import tkinter as tk
+from tkinter import messagebox
+import requests
+
+# API для получения актуальных курсов валют
+API_URL = "https://api.exchangerate-api.com/v4/latest/USD"  # API для курсов валют относительно USD
+
+def get_exchange_rate():
+    try:
+        response = requests.get(API_URL)
+        data = response.json()
+        if response.status_code != 200:
+            raise Exception("Ошибка при получении данных с API")
+        return data['rates']
+    except Exception as e:
+        messagebox.showerror("Ошибка", f"Ошибка: {e}")
+        return None
+
+def convert_currency(amount, from_currency, to_currency, rates):
+    """Функция для конвертации валют"""
+    if from_currency != 'USD':
+        amount = amount / rates[from_currency]  # Переводим в USD
+    return amount * rates[to_currency]
+
+def on_convert():
+    from_currency = from_currency_var.get()
+    to_currency = to_currency_var.get()
+    amount = amount_var.get()
+
+    if from_currency == to_currency:
+        messagebox.showwarning("Ошибка", "Валюты для конвертации не могут быть одинаковыми.")
+        return
+
+    rates = get_exchange_rate()
+    if rates:
+        if from_currency not in rates or to_currency not in rates:
+            messagebox.showerror("Ошибка", "Некорректная валюта.")
+            return
+        converted_amount = convert_currency(amount, from_currency, to_currency, rates)
+        result_label.config(text=f"{amount} {from_currency} = {converted_amount:.2f} {to_currency}")
+
+# Создание окна
+root = tk.Tk()
+root.title("Конвертер валют")
+
+# Заголовок
+header = tk.Label(root, text="Конвертер валют", font=("Arial", 16))
+header.pack(pady=20)
+
+# Переменные для выбора валют и ввода суммы
+from_currency_var = tk.StringVar(value="USD")
+to_currency_var = tk.StringVar(value="EUR")
+amount_var = tk.DoubleVar(value=1.0)
+
+# Дропдауны для выбора валют
+from_currency_label = tk.Label(root, text="Выберите валюту исходную:", font=("Arial", 12))
+from_currency_label.pack(pady=5)
+from_currency_menu = tk.OptionMenu(root, from_currency_var, "USD", "EUR", "GBP", "JPY", "AUD")
+from_currency_menu.pack(pady=5)
+
+to_currency_label = tk.Label(root, text="Выберите валюту назначения:", font=("Arial", 12))
+to_currency_label.pack(pady=5)
+to_currency_menu = tk.OptionMenu(root, to_currency_var, "USD", "EUR", "GBP", "JPY", "AUD")
+to_currency_menu.pack(pady=5)
+
+# Ввод суммы
+amount_label = tk.Label(root, text="Введите сумму для конвертации:", font=("Arial", 12))
+amount_label.pack(pady=5)
+amount_entry = tk.Entry(root, textvariable=amount_var, font=("Arial", 12))
+amount_entry.pack(pady=5)
+
+# Кнопка для конвертации
+convert_button = tk.Button(root, text="Конвертировать", font=("Arial", 12), command=on_convert)
+convert_button.pack(pady=20)
+
+# Метка для отображения результата
+result_label = tk.Label(root, text="Результат будет отображен здесь", font=("Arial", 12))
+result_label.pack(pady=20)
+
+# Запуск интерфейса
+root.mainloop()
