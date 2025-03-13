@@ -1,0 +1,43 @@
+import requests
+
+# API для получения актуальных курсов валют
+API_URL = "https://api.exchangerate-api.com/v4/latest/USD"  # API для курсов валют относительно USD (можно заменить на другой API)
+
+def get_exchange_rate():
+    try:
+        response = requests.get(API_URL)
+        data = response.json()
+        if response.status_code != 200:
+            raise Exception("Ошибка при получении данных с API")
+        return data['rates']
+    except Exception as e:
+        print(f"Ошибка: {e}")
+        return None
+
+def convert_currency(amount, from_currency, to_currency, rates):
+    """Функция для конвертации валют"""
+    if from_currency != 'USD':
+        amount = amount / rates[from_currency]  # Переводим в USD
+    return amount * rates[to_currency]
+
+def main():
+    # Получаем актуальные курсы валют
+    rates = get_exchange_rate()
+    if not rates:
+        return
+    
+    print("Доступные валюты:", ', '.join(rates.keys()))
+    
+    from_currency = input("Введите валюту для конвертации (например, EUR, GBP): ").upper()
+    to_currency = input("Введите валюту для получения (например, USD, EUR): ").upper()
+    amount = float(input("Введите сумму для конвертации: "))
+    
+    if from_currency not in rates or to_currency not in rates:
+        print("Некорректная валюта.")
+        return
+    
+    converted_amount = convert_currency(amount, from_currency, to_currency, rates)
+    print(f"{amount} {from_currency} = {converted_amount:.2f} {to_currency}")
+
+if __name__ == "__main__":
+    main()
